@@ -5,7 +5,6 @@ import com.github.houbb.heaven.util.lang.StringUtil;
 import com.github.houbb.id.api.Id;
 import com.github.houbb.id.core.util.IdThreadLocalHelper;
 import com.github.houbb.lock.api.core.ILockKeyFormat;
-import com.github.houbb.lock.api.core.ILockSupport;
 import com.github.houbb.lock.api.core.ILockSupportContext;
 import com.github.houbb.lock.core.support.format.LockKeyFormatContext;
 import com.github.houbb.log.integration.core.Log;
@@ -20,16 +19,16 @@ import java.util.concurrent.TimeUnit;
  * @author binbin.hou
  * @since 0.0.1
  */
-public class RedisLockSupport implements ILockSupport {
+public class RedisLockSupport extends AbstractLockSupport {
 
     private final Log log = LogFactory.getLog(RedisLockSupport.class);
 
     @Override
-    public boolean tryLock(ILockSupportContext context) {
+    public boolean doTryLock(ILockSupportContext context) {
         long startTimeMills = System.currentTimeMillis();
 
         // 一次获取，直接成功
-        boolean result = this.doLock(context);
+        boolean result = this.doRedisLock(context);
         if(result) {
             return true;
         }
@@ -45,7 +44,7 @@ public class RedisLockSupport implements ILockSupport {
 
         // 循环等待
         while (System.currentTimeMillis() < endMills) {
-            result = this.doLock(context);
+            result = this.doRedisLock(context);
             if(result) {
                 return true;
             }
@@ -65,7 +64,7 @@ public class RedisLockSupport implements ILockSupport {
      * @param context 上下文
      * @return 结果
      */
-    protected boolean doLock(ILockSupportContext context) {
+    protected boolean doRedisLock(ILockSupportContext context) {
         final ICommonCacheService commonCacheService = context.cache();
         final String key = this.getActualKey(context);
 
@@ -98,7 +97,7 @@ public class RedisLockSupport implements ILockSupport {
     }
 
     @Override
-    public boolean unlock(ILockSupportContext context) {
+    public boolean doUnlock(ILockSupportContext context) {
         final String key = this.getActualKey(context);
 
         String requestId = IdThreadLocalHelper.get();
@@ -114,24 +113,6 @@ public class RedisLockSupport implements ILockSupport {
         Object result = commonCacheService.eval(script, Collections.singletonList(key), Collections.singletonList(requestId));
         log.info("[LOCK] END UN LOCK key: {}, requestId: {}, result: {}", key, requestId, result);
         return JedisConst.RELEASE_SUCCESS.equals(result);
-    }
-
-    /**
-     * 构建真正的 key
-     * @param context 上下文
-     * @return 结果
-     * @since 1.2.0
-     */
-    private String getActualKey(ILockSupportContext context) {
-        final String rawKey = context.key();
-        final ILockKeyFormat keyFormat = context.lockKeyFormat();
-        LockKeyFormatContext formatContext = LockKeyFormatContext.newInstance()
-                .rawKey(rawKey)
-                .lockKeyNamespace(context.lockKeyNamespace());
-
-        String key = keyFormat.format(formatContext);
-        log.info("[LOCK] format rawKey: {} to key: {}", rawKey, key);
-        return key;
     }
 
 }

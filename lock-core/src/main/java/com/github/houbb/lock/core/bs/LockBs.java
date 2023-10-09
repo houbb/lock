@@ -20,10 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @author binbin.hou
  * @since 0.0.4
  */
-public final class LockBs implements ILock {
-
-    private LockBs() {
-    }
+public class LockBs implements ILock {
 
     public static LockBs newInstance() {
         return new LockBs();
@@ -69,6 +66,17 @@ public final class LockBs implements ILock {
      * @since 1.2.0
      */
     private ILockReleaseFailHandler lockReleaseFailHandler = new LockReleaseFailHandler();
+
+    /**
+     * 尝试加锁等待时间间隔
+     * @since 1.6.0
+     */
+    private int tryLockIntervalMills = LockConst.DEFAULT_TRY_LOCK_INTERVAL_MILLS;
+
+    public LockBs tryLockIntervalMills(int tryLockIntervalMills) {
+        this.tryLockIntervalMills = tryLockIntervalMills;
+        return this;
+    }
 
     public LockBs id(Id id) {
         ArgUtil.notNull(id, "id");

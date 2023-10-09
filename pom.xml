@@ -5,7 +5,7 @@
     <groupId>com.github.houbb</groupId>
     <artifactId>lock</artifactId>
     <packaging>pom</packaging>
-    <version>1.5.0</version>
+    <version>1.6.0-SNAPSHOT</version>
     <modules>
         <module>lock-api</module>
         <module>lock-core</module>
@@ -13,6 +13,7 @@
         <module>lock-spring</module>
         <module>lock-springboot-starter</module>
         <module>lock-test2</module>
+        <module>lock-mysql</module>
     </modules>
 
     <properties>
@@ -62,6 +63,11 @@
             <dependency>
                 <groupId>com.github.houbb</groupId>
                 <artifactId>lock-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.houbb</groupId>
+                <artifactId>lock-mysql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -129,7 +135,19 @@
                 <version>${redis-config.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.houbb</groupId>
+                <artifactId>jdbc-mapping</artifactId>
+                <version>0.0.10-SNAPSHOT</version>
+            </dependency>
+
             <!--============================== OTHER ==============================-->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>5.1.34</version>
+            </dependency>
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

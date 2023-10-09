@@ -43,4 +43,10 @@ public final class LockConst {
      */
     public static final boolean DEFAULT_REENTRANT = true;
 
+    /**
+     * 尝试加锁的等待间隔
+     * @since 1.6.0
+     */
+    public static final int DEFAULT_TRY_LOCK_INTERVAL_MILLS = 10;
+
 }

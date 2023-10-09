@@ -81,6 +81,12 @@ public class LockSupportContext implements ILockSupportContext {
      */
     private boolean reentrant;
 
+    /**
+     * 尝试加锁等待时间间隔
+     * @since 1.6.0
+     */
+    private int tryLockIntervalMills;
+
     @Override
     public Id id() {
         return id;
@@ -178,6 +184,16 @@ public class LockSupportContext implements ILockSupportContext {
 
     public LockSupportContext reentrant(boolean reentrant) {
         this.reentrant = reentrant;
+        return this;
+    }
+
+    @Override
+    public int tryLockIntervalMills() {
+        return tryLockIntervalMills;
+    }
+
+    public LockSupportContext tryLockIntervalMills(int tryLockIntervalMills) {
+        this.tryLockIntervalMills = tryLockIntervalMills;
         return this;
     }
 }

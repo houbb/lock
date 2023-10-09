@@ -82,5 +82,11 @@ public interface ILockSupportContext {
      */
     boolean reentrant();
 
+    /**
+     * 尝试加锁等待间隔
+     * @return 间隔
+     * @since 1.6.0
+     */
+    int tryLockIntervalMills();
 
 }
