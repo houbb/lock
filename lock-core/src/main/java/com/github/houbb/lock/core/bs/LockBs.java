@@ -1,6 +1,7 @@
 package com.github.houbb.lock.core.bs;
 
 import com.github.houbb.common.cache.api.service.ICommonCacheService;
+import com.github.houbb.common.cache.core.service.CommonCacheServiceMap;
 import com.github.houbb.heaven.util.common.ArgUtil;
 import com.github.houbb.id.api.Id;
 import com.github.houbb.id.core.core.Ids;
@@ -38,7 +39,7 @@ public class LockBs implements ILock {
      *
      * @since 0.0.4
      */
-    private ICommonCacheService cache = JedisRedisServiceFactory.pooled("127.0.0.1", 6379);
+    private ICommonCacheService cache = new CommonCacheServiceMap();
 
     /**
      * 锁支持策略
@@ -190,7 +191,9 @@ public class LockBs implements ILock {
                 .timeUnit(timeUnit)
                 .lockTime(lockTime)
                 .waitLockTime(waitLockTime)
-                .reentrant(reentrant);
+                .reentrant(reentrant)
+                .tryLockIntervalMills(tryLockIntervalMills)
+                ;
         return context;
     }
 

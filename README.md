@@ -36,17 +36,71 @@ jdk1.7+
 
 maven 3.x+
 
-## maven 引入 
+
+## 基于 mysql 的分布式锁
+
+### maven 引入
+
+```xml
+<dependency>
+    <groupId>com.github.houbb</groupId>
+    <artifactId>lock-mysql</artifactId>
+    <version>1.6.0</version>
+</dependency>
+```
+
+### 执行脚本
+
+首先在加锁的库执行建表语句：
+
+```sql
+CREATE TABLE t_distributed_lock
+(
+    id             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    lock_key       varchar(128)        NOT NULL COMMENT '唯一约束',
+    lock_holder    varchar(32)         NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
+    lock_expire_time bigint(20)          NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
+    create_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_lock_key (lock_key)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='数据库分布式锁表';
+```
+
+### 入门例子
+
+代码例子
+
+```java
+LockMySqlBs lockMySqlBs = LockMySqlBs.newInstance()
+                .url("jdbc:mysql://127.0.0.1:3306/test")
+                .password("123456")
+                .init();
+
+final String lockKey = "222";
+try {
+    lockMySqlBs.tryLock(lockKey);
+
+    // 业务处理
+} finally {
+    lockMySqlBs.unlock(lockKey);
+}
+```
+
+## 基于 redis 的分布式锁
+
+### maven 引入 
 
 ```xml
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-core</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
 </dependency>
 ```
 
-## 入门例子
+### 入门例子
 
 基于本地 redis 的测试案例。
 
@@ -245,7 +299,7 @@ LockBs.newInstance()
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-spring</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
 </dependency>
 ```
 
@@ -422,7 +476,7 @@ public @interface Lock {
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-springboot-starter</artifactId>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
 </dependency>
 ```
 
@@ -439,6 +493,8 @@ public @interface Lock {
 持有锁的线程可以多次获取锁
 
 - [x] 分布式锁注解支持
+
+- [ ] spring 的锁支持拓展性扩展，而不是局限于 redis-lock
 
 # 拓展阅读
 

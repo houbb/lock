@@ -5,7 +5,7 @@
     <groupId>com.github.houbb</groupId>
     <artifactId>lock</artifactId>
     <packaging>pom</packaging>
-    <version>1.6.0-SNAPSHOT</version>
+    <version>1.6.0</version>
     <modules>
         <module>lock-api</module>
         <module>lock-core</module>
@@ -38,8 +38,8 @@
         <!--============================== INTER ==============================-->
         <plugin.gen.version>1.0.6</plugin.gen.version>
 
-        <heaven.version>0.1.168</heaven.version>
-        <id.version>0.0.6</id.version>
+        <heaven.version>0.3.0</heaven.version>
+        <id.version>0.0.7</id.version>
         <wait.version>0.0.1</wait.version>
         <log-integration.version>1.1.8</log-integration.version>
         <common-cache.version>0.0.5</common-cache.version>
@@ -48,7 +48,7 @@
         <test.version>0.0.1</test.version>
 
         <!--============================== OTHER ==============================-->
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <spring-boot.version>1.5.22.RELEASE</spring-boot.version>
     </properties>
 
@@ -138,7 +138,7 @@
             <dependency>
                 <groupId>com.github.houbb</groupId>
                 <artifactId>jdbc-mapping</artifactId>
-                <version>0.0.10-SNAPSHOT</version>
+                <version>0.0.10</version>
             </dependency>
 
             <!--============================== OTHER ==============================-->
