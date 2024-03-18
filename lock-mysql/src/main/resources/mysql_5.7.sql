@@ -1,11 +1,14 @@
 CREATE TABLE t_distributed_lock
 (
-    id             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    lock_key       varchar(128)        NOT NULL COMMENT '唯一约束',
-    lock_holder    varchar(32)         NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
-    lock_expire_time bigint(20)          NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
-    create_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+    id               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    lock_key         varchar(128) NOT NULL COMMENT '唯一约束',
+    lock_holder      varchar(32)  NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
+    lock_expire_time bigint(20) NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
+    lock_status      char(1)      NOT NULL DEFAULT 'I' COMMENT '锁状态 I:初始化;P:处理中',
+    create_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '创建者',
+    update_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '更新者',
+    create_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
     UNIQUE KEY uk_lock_key (lock_key)
 ) ENGINE = InnoDB

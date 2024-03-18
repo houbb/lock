@@ -17,7 +17,7 @@ public final class LockConst {
      * 加锁 key 对应的命名空间
      * @since 1.4.0
      */
-    public static final String DEFAULT_LOCK_KEY_NAMESPACE = "DISTRIBUTED_LOCK";
+    public static final String DEFAULT_LOCK_KEY_NAMESPACE = "DIS_LOCK";
 
     /**
      * 默认时间单位

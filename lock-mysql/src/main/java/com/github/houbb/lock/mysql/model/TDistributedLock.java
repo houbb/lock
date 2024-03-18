@@ -23,6 +23,13 @@ public class TDistributedLock implements Serializable {
 
     private Long lockExpireTime;
 
+    /**
+     * 锁状态
+     */
+    private String lockStatus;
+
+    private String createUser;
+    private String updateUser;
     private Date createTime;
     private Date updateTime;
 
@@ -58,6 +65,14 @@ public class TDistributedLock implements Serializable {
         this.lockExpireTime = lockExpireTime;
     }
 
+    public String getLockStatus() {
+        return lockStatus;
+    }
+
+    public void setLockStatus(String lockStatus) {
+        this.lockStatus = lockStatus;
+    }
+
     public Date getCreateTime() {
         return createTime;
     }
@@ -74,6 +89,22 @@ public class TDistributedLock implements Serializable {
         this.updateTime = updateTime;
     }
 
+    public String getCreateUser() {
+        return createUser;
+    }
+
+    public void setCreateUser(String createUser) {
+        this.createUser = createUser;
+    }
+
+    public String getUpdateUser() {
+        return updateUser;
+    }
+
+    public void setUpdateUser(String updateUser) {
+        this.updateUser = updateUser;
+    }
+
     @Override
     public String toString() {
         return "TDistributedLock{" +
@@ -81,6 +112,9 @@ public class TDistributedLock implements Serializable {
                 ", lockKey='" + lockKey + '\'' +
                 ", lockHolder='" + lockHolder + '\'' +
                 ", lockExpireTime=" + lockExpireTime +
+                ", lockStatus='" + lockStatus + '\'' +
+                ", createUser='" + createUser + '\'' +
+                ", updateUser='" + updateUser + '\'' +
                 ", createTime=" + createTime +
                 ", updateTime=" + updateTime +
                 '}';

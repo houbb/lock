@@ -14,6 +14,8 @@
 
 - 支持可重入锁获取
 
+- 基于 mysql 的分布式锁
+
 - 基于 redis 的分布式锁
 
 - 内置支持多种 redis 的整合方式
@@ -36,8 +38,31 @@ jdk1.7+
 
 maven 3.x+
 
-
 ## 基于 mysql 的分布式锁
+
+有时候我们的应用架构没有引入 redis，对于分布式锁的性能要求够用就行，可以通过 mysql 等数据库来实现分布式锁。
+
+### mysql 创建表
+
+选择自己的库，创建 mysql 对应的锁表
+
+```sql
+DROP TABLE IF EXISTS t_distributed_lock;
+CREATE TABLE t_distributed_lock
+(
+    id               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    lock_key         varchar(128) NOT NULL COMMENT '唯一约束',
+    lock_holder      varchar(32)  NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
+    lock_expire_time bigint(20) NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
+    lock_status      char(1)      NOT NULL DEFAULT 'I' COMMENT '锁状态 I:初始化;P:处理中',
+    create_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '创建者',
+    update_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '更新者',
+    create_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_lock_key (lock_key)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='数据库分布式锁表';
+```
 
 ### maven 引入
 
@@ -45,7 +70,7 @@ maven 3.x+
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-mysql</artifactId>
-    <version>1.6.0</version>
+    <version>1.7.0</version>
 </dependency>
 ```
 
@@ -72,20 +97,36 @@ CREATE TABLE t_distributed_lock
 
 代码例子
 
+`MysqlLockSupports.merge(dataSource)` 用于指定 mysql 锁的模式。
+
+insert: 通过插入的方式抢占锁，删除数据释放锁。适合 key 一次性的锁资源增强。比如交易中等一次性的锁抢占。
+update: 预设 Key 对应的记录已经提前插入，通过更新状态控制锁的争抢和释放。适合一些固定的任务等。
+merge: key 可以不提前初始化，通过更新状态控制锁的争抢和释放。适合一些固定的任务等。
+
 ```java
-LockMySqlBs lockMySqlBs = LockMySqlBs.newInstance()
+//datasource
+        DataSource dataSource = JdbcPoolBs.newInstance()
                 .url("jdbc:mysql://127.0.0.1:3306/test")
+                .username("admin")
                 .password("123456")
-                .init();
+                .pooled();
 
-final String lockKey = "222";
-try {
-    lockMySqlBs.tryLock(lockKey);
+                // 初始化 mysql lock
+                ILockSupport lockSupport = MysqlLockSupports.merge(dataSource);
 
-    // 业务处理
-} finally {
-    lockMySqlBs.unlock(lockKey);
-}
+                // 设置引导类
+                LockBs lockBs = LockBs.newInstance()
+                .lockSupport(lockSupport)
+                ;
+
+        final String lockKey = "222";
+        try {
+            lockBs.tryLock(lockKey);
+    
+            // 业务处理
+        } finally {
+            lockBs.unlock(lockKey);
+        }
 ```
 
 ## 基于 redis 的分布式锁
@@ -96,7 +137,7 @@ try {
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-core</artifactId>
-    <version>1.6.0</version>
+    <version>1.7.0</version>
 </dependency>
 ```
 
@@ -299,7 +340,7 @@ LockBs.newInstance()
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-spring</artifactId>
-    <version>1.6.0</version>
+    <version>1.7.0</version>
 </dependency>
 ```
 
@@ -476,7 +517,7 @@ public @interface Lock {
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-springboot-starter</artifactId>
-    <version>1.6.0</version>
+    <version>1.7.0</version>
 </dependency>
 ```
 
@@ -495,6 +536,8 @@ public @interface Lock {
 - [x] 分布式锁注解支持
 
 - [ ] spring 的锁支持拓展性扩展，而不是局限于 redis-lock
+
+- [ ] watch-dog，添加锁的自动续租？
 
 # 拓展阅读
 
