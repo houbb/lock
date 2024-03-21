@@ -1,5 +1,6 @@
 package com.github.houbb.lock.test.mysql;
 
+import com.github.houbb.jdbc.common.constant.DriverNameConst;
 import com.github.houbb.lock.api.core.ILockSupport;
 import com.github.houbb.lock.core.bs.LockBs;
 import com.github.houbb.lock.mysql.support.lock.MysqlLockSupports;
@@ -19,6 +20,7 @@ public class LockMysqlTest {
                 .url("jdbc:mysql://127.0.0.1:3306/test")
                 .username("admin")
                 .password("123456")
+                .driverClass(DriverNameConst.MYSQL)
                 .pooled();
 
         // 初始化 mysql lock

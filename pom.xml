@@ -5,7 +5,7 @@
     <groupId>com.github.houbb</groupId>
     <artifactId>lock</artifactId>
     <packaging>pom</packaging>
-    <version>1.7.0</version>
+    <version>1.7.1</version>
     <modules>
         <module>lock-api</module>
         <module>lock-core</module>
@@ -46,7 +46,7 @@
         <redis-config.version>1.4.0</redis-config.version>
         <aop.version>0.0.2</aop.version>
         <test.version>0.0.1</test.version>
-        <jdbc.version>0.4.0</jdbc.version>
+        <jdbc.version>0.7.1</jdbc.version>
 
         <!--============================== OTHER ==============================-->
         <junit.version>4.13.1</junit.version>

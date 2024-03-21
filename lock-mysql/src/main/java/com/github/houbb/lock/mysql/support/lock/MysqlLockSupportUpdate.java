@@ -2,9 +2,7 @@ package com.github.houbb.lock.mysql.support.lock;
 
 import com.github.houbb.jdbc.api.dal.IMapper;
 import com.github.houbb.lock.api.core.ILockSupportContext;
-import com.github.houbb.lock.core.support.lock.BasicLockSupport;
 import com.github.houbb.lock.mysql.constant.LockMysqlConst;
-import com.github.houbb.redis.config.core.constant.JedisConst;
 
 /**
  * 预设 Key 对应的记录已经提前插入，通过更新状态控制锁的争抢和释放。适合一些固定的任务等。
@@ -16,8 +14,19 @@ import com.github.houbb.redis.config.core.constant.JedisConst;
  */
 public class MysqlLockSupportUpdate extends AbstractMysqlLockSupport {
 
-    public MysqlLockSupportUpdate(IMapper mapper) {
+    /**
+     * 是否支持任务并发执行。
+     * 并发执行：第一个任务没执行完成，expire_time 到期也可以执行。
+     */
+    private final boolean concurrency;
+
+    public MysqlLockSupportUpdate(IMapper mapper, boolean concurrency) {
         super(mapper);
+        this.concurrency = concurrency;
+    }
+
+    public MysqlLockSupportUpdate(IMapper mapper) {
+        this(mapper, false);
     }
 
     @Override
@@ -26,8 +35,17 @@ public class MysqlLockSupportUpdate extends AbstractMysqlLockSupport {
         // 或者锁的状态为初始化
         long now = System.currentTimeMillis();
         long expireAt = now + lockExpireMills;
-        String sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
-                "WHERE lock_key = '%s' AND (lock_status='I' OR lock_expire_time < %d)";
+
+        // 如果是并发
+        String sqlFormat = "";
+        if(concurrency) {
+            sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
+                    "WHERE lock_key = '%s' AND (lock_status='I' OR lock_expire_time < %d)";
+        } else {
+            // 必须要求状态为 I
+            sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
+                    "WHERE lock_key = '%s' AND lock_status='I' AND lock_expire_time < %d";
+        }
 
         return String.format(sqlFormat, LockMysqlConst.DISTRIBUTED_LOCK_T, requestId, expireAt, key, now);
     }

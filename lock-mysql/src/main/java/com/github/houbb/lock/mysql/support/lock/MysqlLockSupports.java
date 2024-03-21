@@ -20,20 +20,36 @@ public class MysqlLockSupports {
         return new MysqlLockSupportInsert(mapper);
     }
 
+    public static ILockSupport update(final DataSource dataSource, boolean concurrency) {
+        return update(buildDefaultMapper(dataSource), concurrency);
+    }
+
     public static ILockSupport update(final DataSource dataSource) {
-        return update(buildDefaultMapper(dataSource));
+        return update(dataSource, false);
     }
 
     public static ILockSupport update(final IMapper mapper) {
         return new MysqlLockSupportUpdate(mapper);
     }
 
+    public static ILockSupport update(final IMapper mapper, boolean concurrency) {
+        return new MysqlLockSupportUpdate(mapper, concurrency);
+    }
+
     public static ILockSupport merge(final DataSource dataSource) {
         return merge(buildDefaultMapper(dataSource));
     }
 
+    public static ILockSupport merge(final DataSource dataSource, boolean concurrency) {
+        return merge(buildDefaultMapper(dataSource), concurrency);
+    }
+
+    public static ILockSupport merge(final IMapper mapper, boolean concurrency) {
+        return new MysqlLockSupportMerge(mapper, concurrency);
+    }
+
     public static ILockSupport merge(final IMapper mapper) {
-        return new MysqlLockSupportMerge(mapper);
+        return merge(mapper, false);
     }
 
 }

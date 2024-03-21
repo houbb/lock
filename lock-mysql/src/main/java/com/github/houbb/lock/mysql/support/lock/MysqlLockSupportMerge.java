@@ -14,8 +14,15 @@ import com.github.houbb.lock.mysql.constant.LockMysqlConst;
  */
 public class MysqlLockSupportMerge extends AbstractMysqlLockSupport {
 
-    public MysqlLockSupportMerge(IMapper mapper) {
+    private final boolean concurrency;
+
+    public MysqlLockSupportMerge(IMapper mapper, boolean concurrency) {
         super(mapper);
+        this.concurrency = concurrency;
+    }
+
+    public MysqlLockSupportMerge(IMapper mapper) {
+        this(mapper, false);
     }
 
     @Override
@@ -36,8 +43,17 @@ public class MysqlLockSupportMerge extends AbstractMysqlLockSupport {
         // 或者锁的状态为初始化
         long now = System.currentTimeMillis();
         long expireAt = now + lockExpireMills;
-        String sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
-                "WHERE lock_key = '%s' AND (lock_status='I' OR lock_expire_time < %d)";
+
+        // 如果是并发
+        String sqlFormat = "";
+        if(concurrency) {
+            sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
+                    "WHERE lock_key = '%s' AND (lock_status='I' OR lock_expire_time < %d)";
+        } else {
+            // 必须要求状态为 I
+            sqlFormat = "UPDATE %s SET lock_holder='%s', lock_expire_time=%d, lock_status='P' " +
+                    "WHERE lock_key = '%s' AND lock_status='I' AND lock_expire_time < %d";
+        }
 
         return String.format(sqlFormat, LockMysqlConst.DISTRIBUTED_LOCK_T, requestId, expireAt, key, now);
     }
@@ -55,7 +71,7 @@ public class MysqlLockSupportMerge extends AbstractMysqlLockSupport {
         String sql = String.format(sqlFormat, LockMysqlConst.DISTRIBUTED_LOCK_T, key);
 
         // TODO: 第二个参数后续可以引入默认值
-        return mapper.selectCount(sql, null);
+        return mapper.selectCount(sql);
     }
 
     @Override
