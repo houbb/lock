@@ -22,11 +22,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.houbb</groupId>
-            <artifactId>lock-mysql</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
