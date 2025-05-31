@@ -30,13 +30,11 @@ public class LockAopConfig implements ImportAware, BeanFactoryPostProcessor {
         Id id = beanFactory.getBean(enableLockAttributes.getString("id"), Id.class);
         ILockKeyFormat lockKeyFormat = beanFactory.getBean(enableLockAttributes.getString("lockKeyFormat"), ILockKeyFormat.class);
         ILockReleaseFailHandler lockReleaseFailHandler = beanFactory.getBean(enableLockAttributes.getString("lockReleaseFailHandler"), ILockReleaseFailHandler.class);
-        String lockKeyNamespace = enableLockAttributes.getString("lockKeyNamespace");
 
         return LockBs.newInstance()
                 .cache(commonCacheService)
                 .id(id)
                 .lockKeyFormat(lockKeyFormat)
-                .lockKeyNamespace(lockKeyNamespace)
                 .lockReleaseFailHandler(lockReleaseFailHandler);
     }
 

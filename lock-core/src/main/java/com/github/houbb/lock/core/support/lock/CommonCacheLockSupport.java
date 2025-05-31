@@ -1,23 +1,15 @@
 package com.github.houbb.lock.core.support.lock;
 
 import com.github.houbb.common.cache.api.service.ICommonCacheService;
-import com.github.houbb.heaven.util.lang.StringUtil;
-import com.github.houbb.id.api.Id;
-import com.github.houbb.id.core.util.IdThreadLocalHelper;
 import com.github.houbb.lock.api.core.ILockSupportContext;
-import com.github.houbb.log.integration.core.Log;
-import com.github.houbb.log.integration.core.LogFactory;
 import com.github.houbb.redis.config.core.constant.JedisConst;
-
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 分布式锁接口定义
  * @author binbin.hou
  * @since 0.0.1
  */
-public class CacheLockSupport extends BasicLockSupport {
+public class CommonCacheLockSupport extends BasicLockSupport {
 
     @Override
     protected boolean doActualLock(String key, String requestId, long lockExpireMills, ILockSupportContext context) {
@@ -35,10 +27,11 @@ public class CacheLockSupport extends BasicLockSupport {
     @Override
     protected boolean doActualUnLock(String key, String requestId, ILockSupportContext context) {
         final ICommonCacheService commonCacheService = context.cache();
-        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-        Object result = commonCacheService.eval(script, Collections.singletonList(key), Collections.singletonList(requestId));
-        log.info("[LOCK] END UN LOCK key: {}, requestId: {}, result: {}", key, requestId, result);
-        return JedisConst.RELEASE_SUCCESS.equals(result);
+
+        boolean result = commonCacheService.removeEx(key, requestId);
+        log.debug("[LOCK] END UNLOCK key: {}, requestId: {}, result: {}",
+                key, requestId, result);
+        return result;
     }
 
 }

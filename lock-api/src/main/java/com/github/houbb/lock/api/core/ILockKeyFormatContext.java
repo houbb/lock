@@ -16,11 +16,4 @@ public interface ILockKeyFormatContext {
      */
     String rawKey();
 
-    /**
-     * 锁 key 的默认命名空间
-     * @return 锁 key 的默认命名空间
-     * @since 1.4.0
-     */
-    String lockKeyNamespace();
-
 }

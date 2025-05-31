@@ -39,8 +39,7 @@ public abstract class AbstractLockSupport implements ILockSupport {
         final String rawKey = context.key();
         final ILockKeyFormat keyFormat = context.lockKeyFormat();
         LockKeyFormatContext formatContext = LockKeyFormatContext.newInstance()
-                .rawKey(rawKey)
-                .lockKeyNamespace(context.lockKeyNamespace());
+                .rawKey(rawKey);
 
         String key = keyFormat.format(formatContext);
         log.info("[LOCK] format rawKey: {} to key: {}", rawKey, key);

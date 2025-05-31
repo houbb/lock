@@ -9,9 +9,8 @@ import com.github.houbb.lock.api.core.*;
 import com.github.houbb.lock.core.constant.LockConst;
 import com.github.houbb.lock.core.support.format.LockKeyFormat;
 import com.github.houbb.lock.core.support.handler.LockReleaseFailHandler;
+import com.github.houbb.lock.core.support.lock.CommonCacheLockSupport;
 import com.github.houbb.lock.core.support.lock.LockSupportContext;
-import com.github.houbb.lock.core.support.lock.RedisLockSupport;
-import com.github.houbb.redis.config.core.factory.JedisRedisServiceFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +45,7 @@ public class LockBs implements ILock {
      *
      * @since 1.0.0
      */
-    private ILockSupport lockSupport = new RedisLockSupport();
+    private ILockSupport lockSupport = new CommonCacheLockSupport();
 
     /**
      * 锁 key 格式化
@@ -54,12 +53,6 @@ public class LockBs implements ILock {
      * @since 1.2.0
      */
     private ILockKeyFormat lockKeyFormat = new LockKeyFormat();
-
-    /**
-     * 锁 key 的默认命名空间
-     * @since 1.4.0
-     */
-    private String lockKeyNamespace = LockConst.DEFAULT_LOCK_KEY_NAMESPACE;
 
     /**
      * 锁释放失败处理类
@@ -107,12 +100,6 @@ public class LockBs implements ILock {
         return this;
     }
 
-    public LockBs lockKeyNamespace(String lockKeyNamespace) {
-        ArgUtil.notEmpty(lockKeyNamespace, "lockKeyNamespace");
-
-        this.lockKeyNamespace = lockKeyNamespace;
-        return this;
-    }
 
     public LockBs lockReleaseFailHandler(ILockReleaseFailHandler lockReleaseFailHandler) {
         ArgUtil.notNull(lockReleaseFailHandler, "lockReleaseFailHandler");
@@ -185,7 +172,6 @@ public class LockBs implements ILock {
                 .id(id)
                 .cache(cache)
                 .lockKeyFormat(lockKeyFormat)
-                .lockKeyNamespace(lockKeyNamespace)
                 .lockReleaseFailHandler(lockReleaseFailHandler)
                 .key(key)
                 .timeUnit(timeUnit)

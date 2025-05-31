@@ -16,12 +16,6 @@ public class LockKeyFormatContext implements ILockKeyFormatContext {
      */
     private String rawKey;
 
-    /**
-     * 锁 key 的默认命名空间
-     * @since 1.4.0
-     */
-    private String lockKeyNamespace;
-
     public static LockKeyFormatContext newInstance() {
         return new LockKeyFormatContext();
     }
@@ -36,13 +30,4 @@ public class LockKeyFormatContext implements ILockKeyFormatContext {
         return this;
     }
 
-    @Override
-    public String lockKeyNamespace() {
-        return lockKeyNamespace;
-    }
-
-    public LockKeyFormatContext lockKeyNamespace(String lockKeyNamespace) {
-        this.lockKeyNamespace = lockKeyNamespace;
-        return this;
-    }
 }

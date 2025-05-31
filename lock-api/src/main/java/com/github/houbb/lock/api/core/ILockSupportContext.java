@@ -62,13 +62,6 @@ public interface ILockSupportContext {
     ILockKeyFormat lockKeyFormat();
 
     /**
-     * 锁 key 的默认命名空间
-     * @return 锁 key 的默认命名空间
-     * @since 1.4.0
-     */
-    String lockKeyNamespace();
-
-    /**
      * 锁释放失败处理类
      * @since 1.2.0
      * @return 失败处理

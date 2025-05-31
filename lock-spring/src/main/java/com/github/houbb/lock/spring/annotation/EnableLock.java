@@ -44,13 +44,6 @@ public @interface EnableLock {
     String lockKeyFormat() default "lockKeyFormat";
 
     /**
-     * 锁 key 的默认命名空间
-     * @since 1.4.0
-     * @return 命名空间
-     */
-    String lockKeyNamespace() default LockConst.DEFAULT_LOCK_KEY_NAMESPACE;
-
-    /**
      * 锁释放失败处理类
      * @return 结果
      * @since 1.2.0

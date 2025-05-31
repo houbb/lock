@@ -5,8 +5,6 @@ import com.github.houbb.id.api.Id;
 import com.github.houbb.lock.api.core.ILockKeyFormat;
 import com.github.houbb.lock.api.core.ILockReleaseFailHandler;
 import com.github.houbb.lock.api.core.ILockSupportContext;
-import com.github.houbb.lock.core.support.format.LockKeyFormat;
-import com.github.houbb.lock.core.support.handler.LockReleaseFailHandler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -61,12 +59,6 @@ public class LockSupportContext implements ILockSupportContext {
      * @since 1.2.0
      */
     private ILockKeyFormat lockKeyFormat;
-
-    /**
-     * 锁 key 的默认命名空间
-     * @since 1.4.0
-     */
-    private String lockKeyNamespace;
 
     /**
      * 锁释放失败处理类
@@ -154,16 +146,6 @@ public class LockSupportContext implements ILockSupportContext {
 
     public LockSupportContext lockKeyFormat(ILockKeyFormat lockKeyFormat) {
         this.lockKeyFormat = lockKeyFormat;
-        return this;
-    }
-
-    @Override
-    public String lockKeyNamespace() {
-        return lockKeyNamespace;
-    }
-
-    public LockSupportContext lockKeyNamespace(String lockKeyNamespace) {
-        this.lockKeyNamespace = lockKeyNamespace;
         return this;
     }
 

@@ -38,98 +38,7 @@ jdk1.7+
 
 maven 3.x+
 
-## 基于 mysql 的分布式锁
-
-有时候我们的应用架构没有引入 redis，对于分布式锁的性能要求够用就行，可以通过 mysql 等数据库来实现分布式锁。
-
-### mysql 创建表
-
-选择自己的库，创建 mysql 对应的锁表
-
-```sql
-DROP TABLE IF EXISTS t_distributed_lock;
-CREATE TABLE t_distributed_lock
-(
-    id               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    lock_key         varchar(128) NOT NULL COMMENT '唯一约束',
-    lock_holder      varchar(32)  NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
-    lock_expire_time bigint(20) NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
-    lock_status      char(1)      NOT NULL DEFAULT 'I' COMMENT '锁状态 I:初始化;P:处理中',
-    create_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '创建者',
-    update_user      varchar(32)  NOT NULL DEFAULT '' COMMENT '更新者',
-    create_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_lock_key (lock_key)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='数据库分布式锁表';
-```
-
-### maven 引入
-
-```xml
-<dependency>
-    <groupId>com.github.houbb</groupId>
-    <artifactId>lock-mysql</artifactId>
-    <version>1.7.0</version>
-</dependency>
-```
-
-### 执行脚本
-
-首先在加锁的库执行建表语句：
-
-```sql
-CREATE TABLE t_distributed_lock
-(
-    id             bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    lock_key       varchar(128)        NOT NULL COMMENT '唯一约束',
-    lock_holder    varchar(32)         NOT NULL DEFAULT '' COMMENT '锁的持有者标识',
-    lock_expire_time bigint(20)          NOT NULL DEFAULT 0 COMMENT '锁的到期时间',
-    create_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    update_time    timestamp           NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_lock_key (lock_key)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4 COMMENT ='数据库分布式锁表';
-```
-
-### 入门例子
-
-代码例子
-
-`MysqlLockSupports.merge(dataSource)` 用于指定 mysql 锁的模式。
-
-insert: 通过插入的方式抢占锁，删除数据释放锁。适合 key 一次性的锁资源增强。比如交易中等一次性的锁抢占。
-update: 预设 Key 对应的记录已经提前插入，通过更新状态控制锁的争抢和释放。适合一些固定的任务等。
-merge: key 可以不提前初始化，通过更新状态控制锁的争抢和释放。适合一些固定的任务等。
-
-```java
-//datasource
-        DataSource dataSource = JdbcPoolBs.newInstance()
-                .url("jdbc:mysql://127.0.0.1:3306/test")
-                .username("admin")
-                .password("123456")
-                .pooled();
-
-                // 初始化 mysql lock
-                ILockSupport lockSupport = MysqlLockSupports.merge(dataSource);
-
-                // 设置引导类
-                LockBs lockBs = LockBs.newInstance()
-                .lockSupport(lockSupport)
-                ;
-
-        final String lockKey = "222";
-        try {
-            lockBs.tryLock(lockKey);
-    
-            // 业务处理
-        } finally {
-            lockBs.unlock(lockKey);
-        }
-```
-
-## 基于 redis 的分布式锁
+## 基于 MAP 的分布式锁
 
 ### maven 引入 
 
@@ -137,90 +46,44 @@ merge: key 可以不提前初始化，通过更新状态控制锁的争抢和释
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-core</artifactId>
-    <version>1.7.0</version>
+    <version>1.7.2</version>
 </dependency>
 ```
 
 ### 入门例子
 
-基于本地 redis 的测试案例。
+基于本地 MAP 的入门测试案例。
 
 ```java
-public void helloTest() {
-    ILock lock = LockBs.newInstance();
-    String key = "ddd";
-    try {
-        // 加锁
-        boolean lockFlag = lock.tryLock(key);
-        System.out.println("业务处理");
-    } catch (Exception e) {
-        throw new RuntimeException(e);
-    } finally {
-        // 释放锁
-        lock.unlock(key);
-    }
+ILock lock = LockBs.newInstance();
+String key = "ddd";
+try {
+    // 加锁
+    boolean lockFlag = lock.tryLock(key);
+    Assert.assertTrue(lockFlag);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+} finally {
+    // 释放锁
+    lock.unlock(key);
 }
 ```
 
-## tryLock() 方法说明
+# 接口说明
 
-尝试获取指定 key 的锁，返回是否成功。
+## 接口方法文档
 
-```java
-    /**
-     * 尝试获取锁，避免参数过多
-     * @param context 上下文
-     * @return 结果
-     */
-    boolean tryLock(final ILockContext context);
+| 方法签名                                                                                        | 参数说明                                                                                                                               | 返回值说明                  | 版本标记 |
+|------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|----------|
+| `boolean tryLock(final ILockContext context)`                                                   | `context`: 锁操作上下文对象                                                                                                           | 加锁成功返回 true，失败 false | since 1.5.0 |
+| `boolean tryLock(String key, TimeUnit timeUnit, long lockTime, long waitLockTime, boolean reentrant)` | `key`: 锁标识<br>`timeUnit`: 时间单位<br>`lockTime`: 锁持有时长<br>`waitLockTime`: 最大等待时长<br>`reentrant`: 是否允许重入          | 加锁成功返回 true，失败 false | since 1.5.0 |
+| `boolean tryLock(String key, TimeUnit timeUnit, long lockTime, long waitLockTime)`              | `key`: 锁标识<br>`timeUnit`: 时间单位<br>`lockTime`: 锁持有时长<br>`waitLockTime`: 最大等待时长<br>*(默认 reentrant=true)*            | 加锁成功返回 true，失败 false | since 0.0.1 |
+| `boolean tryLock(String key, TimeUnit timeUnit, long lockTime)`                                 | `key`: 锁标识<br>`timeUnit`: 时间单位<br>`lockTime`: 锁持有时长<br>*(默认 waitLockTime=0 仅尝试一次)*                                | 加锁成功返回 true，失败 false | since 0.0.1 |
+| `boolean tryLock(String key, long lockTime)`                                                    | `key`: 锁标识<br>`lockTime`: 锁持有时长(秒)<br>*(默认 timeUnit=SECONDS)*                                                             | 加锁成功返回 true，失败 false | since 0.0.1 |
+| `boolean tryLock(String key)`                                                                   | `key`: 锁标识<br>*(默认 lockTime=10秒)*                                                                                              | 加锁成功返回 true，失败 false | since 0.0.1 |
+| `boolean unlock(String key)`                                                                    | `key`: 锁标识<br>*注意: 释放锁不重试，所有 key 有过期时间*                                                                             | 释放成功返回 true，失败 false | since 0.0.1 |
 
-    /**
-     * 尝试加锁，如果失败，在 waitLockTime 到达之前，会一直尝试。
-     *
-     * @param key key
-     * @param timeUnit 时间单位
-     * @param waitLockTime 等待锁时间
-     * @param lockTime 加锁时间
-     * @param reentrant 是否可以重入获取
-     * @return 返回
-     */
-    boolean tryLock(String key, TimeUnit timeUnit, long lockTime, long waitLockTime, boolean reentrant);
-
-    /**
-     * 尝试加锁。reentrant=true，默认可重入
-     *
-     * @param key key
-     * @param timeUnit 时间单位
-     * @param waitLockTime 等待锁时间
-     * @param lockTime 加锁时间
-     * @return 返回
-     */
-    boolean tryLock(String key, TimeUnit timeUnit, long lockTime, long waitLockTime);
-
-    /**
-     * 尝试加锁。waitLockTime=0，只进行一次尝试。
-     * @param key key
-     * @param timeUnit 时间单位
-     * @param lockTime 加锁时间
-     * @return 返回
-     */
-    boolean tryLock(String key, TimeUnit timeUnit, long lockTime);
-
-    /**
-     * 尝试加锁。timeUnit = TimeUnit.SECONDS，时间单位默认为秒。
-     * @param key key
-     * @param lockTime 加锁时间
-     * @return 返回
-     */
-    boolean tryLock(String key, long lockTime);
-
-    /**
-     * 尝试加锁。lockTime=10，默认等待10S
-     * @param key key
-     * @return 返回
-     */
-    boolean tryLock(String key);
-```
+## tryLock 方法说明
 
 提供了较多方法，只是为了使用更加便捷。
 
@@ -239,22 +102,7 @@ ILockContext lockContext = LockContext.newInstance()
 boolean lockFlag = lock.tryLock(lockContext);
 ```
 
-## unlock() 方法说明
-
-释放指定 key 的锁，返回是否成功。
-
-```java
-/**
- * 解锁
- *
- * ps: 目前释放锁不会进行重试。所有的 key 有过期时间。
- * @param key key
- * @return 是否释放锁成功
- */
-boolean unlock(String key);
-```
-
-建议在 finally 中调用，保障锁的正常释放。
+# 锁的一些特性
 
 ## 锁的可重入性
 
@@ -327,10 +175,23 @@ LockBs.newInstance()
         .cache(JedisRedisServiceFactory.pooled("127.0.0.1", 6379)) //缓存策略
         .lockSupport(new RedisLockSupport())    // 锁实现策略
         .lockKeyFormat(new LockKeyFormat())     // 针对 key 的格式化处理策略
-        .lockKeyNamespace(LockConst.DEFAULT_LOCK_KEY_NAMESPACE) // 加锁 key 的命名空间，避免不同应用冲突
         .lockReleaseFailHandler(new LockReleaseFailHandler())   //释放锁失败处理
         ;
 ```
+
+可配置项如下：
+
+### 属性配置说明
+
+| 属性名                   | 类型                        | 默认值                                | 说明                     | 版本标记 |
+|--------------------------|-----------------------------|---------------------------------------|--------------------------|----------|
+| **id**                   | `Id`                        | `Ids.uuid32()`                        | 唯一标识生成策略         | since 0.0.4 |
+| **cache**                | `ICommonCacheService`       | `new CommonCacheServiceMap()`         | 缓存实现策略             | since 0.0.4 |
+| **lockSupport**          | `ILockSupport`              | `new CommonCacheLockSupport()`        | 锁底层支持策略           | since 1.0.0 |
+| **lockKeyFormat**        | `ILockKeyFormat`            | `new LockKeyFormat()`                 | 锁 Key 格式化处理器      | since 1.2.0 |
+| **lockReleaseFailHandler** | `ILockReleaseFailHandler`   | `new LockReleaseFailHandler()`        | 锁释放失败处理策略       | since 1.2.0 |
+| **tryLockIntervalMills** | `int`                       | `LockConst.DEFAULT_TRY_LOCK_INTERVAL_MILLS` | 尝试加锁的轮询间隔（毫秒） | since 1.6.0 |
+
 
 # 整合 spring
 
@@ -340,7 +201,7 @@ LockBs.newInstance()
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-spring</artifactId>
-    <version>1.7.0</version>
+    <version>1.7.2</version>
 </dependency>
 ```
 
@@ -363,44 +224,15 @@ public class SpringConfig {
 
 `EnableLock` 注解说明，和引导类对应：
 
-```java
-public @interface EnableLock {
+### `@EnableLock` 注解属性说明
 
-    /**
-     * 唯一标识生成策略
-     * @return 结果
-     */
-    String id() default "lockId";
-
-    /**
-     * 缓存实现策略 bean 名称
-     *
-     * 默认引入 redis-config 中的配置
-     *
-     * @return 实现
-     */
-    String cache() default "springRedisService";
-
-    /**
-     * 加锁 key 格式化策略
-     * @return 策略
-     */
-    String lockKeyFormat() default "lockKeyFormat";
-
-    /**
-     * 锁 key 的默认命名空间
-     * @return 命名空间
-     */
-    String lockKeyNamespace() default LockConst.DEFAULT_LOCK_KEY_NAMESPACE;
-
-    /**
-     * 锁释放失败处理类
-     * @return 结果
-     */
-    String lockReleaseFailHandler() default "lockReleaseFailHandler";
-
-}
-```
+| 属性名                 | 描述                       | 默认值                              |
+|------------------------|----------------------------|-------------------------------------|
+| **id()**               | 唯一标识生成策略           | `"lockId"`                          |
+| **cache()**            | 缓存实现策略的 Bean 名称   | `"springRedisService"`              |
+| **lockKeyFormat()**    | 加锁 Key 格式化策略        | `"lockKeyFormat"`                   |
+| **lockKeyNamespace()** | 锁 Key 的默认命名空间      | `LockConst.DEFAULT_LOCK_KEY_NAMESPACE` |
+| **lockReleaseFailHandler()** | 锁释放失败处理类         | `"lockReleaseFailHandler"`          |
 
 其中 `springRedisService` 使用的是 [redis-config](https://github.com/houbb/redis-config) 中的实现。
 
@@ -473,41 +305,15 @@ public class UserService {
 
 其他属性，和引导类的方法参数一一对应。
 
-```java
-public @interface Lock {
+### `@Lock` 注解属性说明
 
-    /**
-     * 缓存的 key 策略，支持 SpEL
-     * @return 结果
-     */
-    String value() default "";
-
-    /**
-     * 时间单位
-     * @return 单位
-     */
-    TimeUnit timeUnit() default TimeUnit.SECONDS;
-
-    /**
-     * 等待锁时间
-     * @return 等待锁时间
-     */
-    long waitLockTime() default LockConst.DEFAULT_WAIT_LOCK_TIME;
-
-    /**
-     * 业务加锁时间
-     * @return 加锁时间
-     */
-    long lockTime() default LockConst.DEFAULT_LOCK_TIME;
-
-    /**
-     * 是否可以重入获取
-     * @return 结果
-     */
-    boolean reentrant() default LockConst.DEFAULT_REENTRANT;
-
-}
-```
+| 属性名           | 类型          | 默认值                              | 说明                                                                 |
+|------------------|---------------|-------------------------------------|----------------------------------------------------------------------|
+| **value()**      | `String`      | `""`                                | 锁的 Key 策略（支持 SpEL 表达式）<br>例：`@Lock("order:#{#orderId}")` |
+| **timeUnit()**   | `TimeUnit`    | `TimeUnit.SECONDS`                  | 时间单位（秒/毫秒等）                                                |
+| **waitLockTime()** | `long`        | `LockConst.DEFAULT_WAIT_LOCK_TIME`  | 等待锁的最长时间<br>*通常为 0（仅尝试一次）或正数（持续重试）*       |
+| **lockTime()**   | `long`        | `LockConst.DEFAULT_LOCK_TIME`       | 锁持有时间<br>*通常为 10-30 秒（防止死锁）*                         |
+| **reentrant()**  | `boolean`     | `LockConst.DEFAULT_REENTRANT`       | 是否允许重入<br>*通常为 true（同一线程可重复获取）*                 |
 
 # spring boot 整合
 
@@ -517,7 +323,7 @@ public @interface Lock {
 <dependency>
     <groupId>com.github.houbb</groupId>
     <artifactId>lock-springboot-starter</artifactId>
-    <version>1.7.0</version>
+    <version>1.7.2</version>
 </dependency>
 ```
 
@@ -535,7 +341,7 @@ public @interface Lock {
 
 - [x] 分布式锁注解支持
 
-- [ ] spring 的锁支持拓展性扩展，而不是局限于 redis-lock
+- [x] spring 的锁支持拓展性扩展，而不是局限于 redis-lock
 
 - [ ] watch-dog，添加锁的自动续租？
 
@@ -545,16 +351,19 @@ public @interface Lock {
 
 [java 从零实现 redis 分布式锁](https://houbb.github.io/2018/09/08/redis-learn-43-distributed-lock-redis-java-impl)
 
-# 缓存相关工具
+## 开源矩阵
 
-[cache: 手写渐进式 redis](https://github.com/houbb/cache)
+下面是一些缓存系列的开源矩阵规划。
 
-[common-cache: 通用缓存标准定义](https://github.com/houbb/common-cache)
-
-[redis-config: 兼容各种常见的 redis 配置模式](https://github.com/houbb/redis-config)
-
-[lock: 开箱即用的分布式锁](https://github.com/houbb/lock)
-
-[resubmit: 防重复提交](https://github.com/houbb/resubmit)
-
-[rate-limit: 限流](https://github.com/houbb/rate-limit/)
+| 名称 | 介绍 | 状态  |
+|:---|:---|:----|
+| [resubmit](https://github.com/houbb/resubmit) | 防止重复提交核心库 | 已开源 |
+| [rate-limit](https://github.com/houbb/rate-limit) | 限流核心库 | 已开源 |
+| [cache](https://github.com/houbb/cache) | 手写渐进式 redis | 已开源 |
+| [lock](https://github.com/houbb/lock) | 开箱即用的分布式锁 | 已开源 |
+| [common-cache](https://github.com/houbb/common-cache) | 通用缓存标准定义 | 已开源 |
+| [redis-config](https://github.com/houbb/redis-config) | 兼容各种常见的 redis 配置模式 | 已开源 |
+| [quota-server](https://github.com/houbb/quota-server) | 限额限次核心服务 | 待开始 |
+| [quota-admin](https://github.com/houbb/quota-admin) | 限额限次控台 | 待开始 |
+| [flow-control-server](https://github.com/houbb/flow-control-server) | 流控核心服务 | 待开始 |
+| [flow-control-admin](https://github.com/houbb/flow-control-admin) | 流控控台 | 待开始 |
